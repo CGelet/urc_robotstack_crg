@@ -1,0 +1,157 @@
+version: "3.9"
+name: urc_robotstack_crg
+
+x-common-env: &common-env
+  TZ: "${TZ}"
+  ROS_DISTRO: "${ROS_DISTRO}"
+  ROS_DOMAIN_ID: "${ROS_DOMAIN_ID}"
+  ROS_LOCALHOST_ONLY: "${ROS_LOCALHOST_ONLY}"
+  RMW_IMPLEMENTATION: "${RMW_IMPLEMENTATION}"
+  CYCLONEDDS_URI: "file:///config/cyclonedds.xml"
+  DISPLAY: "${DISPLAY}"      # used only in x11 profile
+
+x-softgl: &softgl
+  LIBGL_ALWAYS_SOFTWARE: "1"
+  MESA_LOADER_DRIVER_OVERRIDE: "llvmpipe"
+  GALLIUM_DRIVER: "llvmpipe"
+  MESA_GL_VERSION_OVERRIDE: "3.3"
+  MESA_GLSL_VERSION_OVERRIDE: "330"
+
+networks:
+  robotics:
+    driver: bridge
+    name: robotics
+
+volumes:
+  ros_ws:
+  gz_ws:
+  cmu_ws:
+  shared_ws:
+  bag_data:
+  sim_assets:
+
+services:
+  # -----------------------------
+  # XQuartz profile (native X11)
+  # -----------------------------
+  ros:
+    container_name: ros
+    build: { context: ./ros, dockerfile: Dockerfile }
+    hostname: ros
+    networks: [robotics]
+    environment: { <<: [*common-env, *softgl] }
+    volumes:
+      - ros_ws:/work/ws
+      - shared_ws:/work/shared
+      - bag_data:/work/bags
+      - ./config/cyclonedds.xml:/config/cyclonedds.xml:ro
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+    shm_size: "1g"
+    ipc: "shareable"
+    command: bash -lc "xterm & tail -f /dev/null"
+    profiles: ["x11"]
+    restart: unless-stopped
+
+  gz:
+    container_name: gz
+    build: { context: ./gz, dockerfile: Dockerfile }
+    hostname: gz
+    networks: [robotics]
+    environment: { <<: [*common-env, *softgl] }
+    volumes:
+      - gz_ws:/work/ws
+      - sim_assets:/work/assets
+      - shared_ws:/work/shared
+      - ./config/cyclonedds.xml:/config/cyclonedds.xml:ro
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+    shm_size: "2g"
+    ipc: "shareable"
+    depends_on: [ros]
+    command: bash -lc "xterm & tail -f /dev/null"
+    profiles: ["x11"]
+    restart: unless-stopped
+
+  cmu:
+    container_name: cmu
+    build: { context: ./cmu, dockerfile: Dockerfile }
+    hostname: cmu
+    networks: [robotics]
+    environment: { <<: [*common-env, *softgl] }
+    volumes:
+      - cmu_ws:/work/ws
+      - shared_ws:/work/shared
+      - bag_data:/work/bags
+      - ./config/cyclonedds.xml:/config/cyclonedds.xml:ro
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+    shm_size: "1g"
+    ipc: "shareable"
+    depends_on: [ros]
+    command: bash -lc "xterm & tail -f /dev/null"
+    profiles: ["x11"]
+    restart: unless-stopped
+
+  # -----------------------------
+  # xpra profile (browser GUI)
+  # -----------------------------
+  ros_xpra:
+    container_name: ros_xpra
+    build: { context: ./ros, dockerfile: Dockerfile }
+    command: >
+      bash -lc "xpra start :100 --bind-tcp=0.0.0.0:14501 --html=on --daemon=no --mdns=no
+                --opengl=no --no-mmap --dpi=96 --start=fluxbox --start-child=xterm"
+    ports: ["14501:14501"]
+    environment:
+      <<: [*common-env]
+      DISPLAY: ":100"
+    volumes:
+      - ros_ws:/work/ws
+      - shared_ws:/work/shared
+      - bag_data:/work/bags
+      - ./config/cyclonedds.xml:/config/cyclonedds.xml:ro
+    networks: [robotics]
+    shm_size: "1g"
+    ipc: "shareable"
+    profiles: ["xpra"]
+    restart: unless-stopped
+
+  gz_xpra:
+    container_name: gz_xpra
+    build: { context: ./gz, dockerfile: Dockerfile }
+    command: >
+      bash -lc "xpra start :100 --bind-tcp=0.0.0.0:14502 --html=on --daemon=no --mdns=no
+                --opengl=no --no-mmap --dpi=96 --start=fluxbox --start-child=xterm"
+    ports: ["14502:14502"]
+    environment:
+      <<: [*common-env]
+      DISPLAY: ":100"
+    volumes:
+      - gz_ws:/work/ws
+      - sim_assets:/work/assets
+      - shared_ws:/work/shared
+      - ./config/cyclonedds.xml:/config/cyclonedds.xml:ro
+    networks: [robotics]
+    shm_size: "2g"
+    ipc: "shareable"
+    profiles: ["xpra"]
+    restart: unless-stopped
+
+  cmu_xpra:
+    container_name: cmu_xpra
+    build: { context: ./cmu, dockerfile: Dockerfile }
+    command: >
+      bash -lc "xpra start :100 --bind-tcp=0.0.0.0:14503 --html=on --daemon=no --mdns=no
+                --opengl=no --no-mmap --dpi=96 --start=fluxbox --start-child=xterm"
+    ports: ["14503:14503"]
+    environment:
+      <<: [*common-env]
+      DISPLAY: ":100"
+    volumes:
+      - cmu_ws:/work/ws
+      - shared_ws:/work/shared
+      - bag_data:/work/bags
+      - ./config/cyclonedds.xml:/config/cyclonedds.xml:ro
+    networks: [robotics]
+    shm_size: "1g"
+    ipc: "shareable"
+    profiles: ["xpra"]
+    restart: unless-stopped
