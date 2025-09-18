@@ -136,6 +136,7 @@ services:
     restart: unless-stopped
 
   cmu_xpra:
+    platform: linux/amd64 # Remove this to go back to normal multi-arch build
     container_name: cmu_xpra
     build: { context: ./cmu, dockerfile: Dockerfile }
     command: >
