@@ -20,3 +20,8 @@ cmu:
 
 logs:
 	docker compose logs -f --tail=200
+
+xpra-start:
+	docker compose exec ros_xpra bash -lc 'xpra control :100 start xterm'
+	docker compose exec gz_xpra  bash -lc 'xpra control :100 start xterm'
+	docker compose exec cmu_xpra bash -lc 'xpra control :100 start xterm'

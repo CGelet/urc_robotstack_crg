@@ -21,6 +21,9 @@ networks:
   robotics:
     driver: bridge
     name: robotics
+  z1:
+    driver: bridge
+    name: z1
 
 volumes:
   ros_ws:
@@ -99,7 +102,10 @@ services:
     command: >
       bash -lc "xpra start :100 --bind-tcp=0.0.0.0:14501 --html=on --daemon=no --mdns=no
                 --opengl=no --no-mmap --dpi=96 --start=fluxbox --start-child=xterm"
-    ports: ["14501:14501"]
+    ports: 
+    - "5900:5900"
+    - "14500:14500"
+    - "14501:14501"
     environment:
       <<: [*common-env]
       DISPLAY: ":100"
@@ -108,7 +114,9 @@ services:
       - shared_ws:/work/shared
       - bag_data:/work/bags
       - ./config/cyclonedds.xml:/config/cyclonedds.xml:ro
-    networks: [robotics]
+    networks: 
+      - robotics
+      - z1
     shm_size: "1g"
     ipc: "shareable"
     profiles: ["xpra"]
