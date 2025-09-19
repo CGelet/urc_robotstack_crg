@@ -18,7 +18,11 @@ RUN curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key \
     apt-get update && apt-get install -y --no-install-recommends \
       ros-humble-desktop \
       ros-humble-navigation2 ros-humble-nav2-bringup \
-      ros-humble-slam-toolbox \
+      ros-humble-slam-toolbox \ 
+      ros-humble-gazebo-ros-pkgs \
+      ros-humble-gazebo-ros \
+      ros-humble-rmw-cyclonedds-cpp \
+      ros-humble-xacro \
  && apt-get clean && rm -rf /var/lib/apt/lists/* /var/cache/apt/*
 
 RUN useradd -ms /bin/bash dev && echo "dev ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/dev
@@ -26,3 +30,4 @@ USER dev
 WORKDIR /work/ws
 SHELL ["/bin/bash","-lc"]
 RUN echo 'source /opt/ros/humble/setup.bash' >> ~/.bashrc
+RUN echo "source /work/ws/autonomous_exploration_development_environment/install/setup.bash" >> ~/.bashrc

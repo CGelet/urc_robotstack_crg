@@ -491,3 +491,28 @@ OpenGL is set to software fallback (`llvmpipe`) by default for safety.
   docker compose exec gz_xpra  bash -lc 'xpra control :100 start xterm'
   docker compose exec cmu_xpra bash -lc 'xpra control :100 start xterm'
   ```
+  Run this for CMU error
+  
+  ```bash
+  # 1) Stop everything & clear any leftovers
+  pkill -9 -f "gzserver|gzclient|rviz2|ros2|spawn_entity.py|vehicleSimulator|visualizationTools|realTimePlot|joy_node" || true
+  sudo rm -f /dev/shm/cyclonedds* /dev/shm/ros2_* /dev/shm/dds* /dev/shm/rt_* 2>/dev/null || true
+
+  # 2) Keep SHM disabled (you already set this) and force CycloneDDS
+  export CYCLONEDDS_URI='<CycloneDDS><Domain id="any"><SharedMemory><Enable>false</Enable></SharedMemory></Domain></CycloneDDS>'
+  export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+
+  # 3) Pick a valid domain id
+  export ROS_DOMAIN_ID=31
+  echo "ROS_DOMAIN_ID=$ROS_DOMAIN_ID"
+
+  # 4) Re-source & launch
+  source /opt/ros/humble/setup.bash
+  source /work/ws/autonomous_exploration_development_environment/install/setup.bash
+  ros2 launch vehicle_simulator system_garage.launch
+  ```
+  ```bash
+  - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+    - ROS_DOMAIN_ID=31
+    - CYCLONEDDS_URI=<CycloneDDS><Domain id="any"><SharedMemory><Enable>false</Enable></SharedMemory></Domain></CycloneDDS>
+  ```
